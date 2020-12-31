@@ -5,17 +5,17 @@ scheduled_sampling_start: 0
 # checkpoint_path: $ckpt_path
 # $start_from
 language_eval: 1
-save_checkpoint_every: 50
-val_images_use: 50
-rnn_size: 512
-input_encoding_size: 512
+save_checkpoint_every: 1000
+val_images_use: 10000
+rnn_size: 1024
+input_encoding_size: 1024
 att_feat_size: 2048
-att_hid_size: 512
+att_hid_size: 1024
 
 train_sample_n: 5
 self_critical_after: -1
-batch_size: 5
+batch_size: 250
 learning_rate_decay_start: 0
-max_epochs: 30
-checkpoint_path: /home/xuewyang/Xuewen/Research/model/fashion/captioning/updown
-data_folder: /home/xuewyang/Xuewen/Research/data/FACAD/images/
+max_epochs: 100
+checkpoint_path: /home/xuewyang/Research/model/fashion/captioning/updown
+data_folder: /home/xuewyang/Research/data/facad/
