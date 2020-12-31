@@ -1,19 +1,22 @@
 # base
 caption_model: att2in2
-input_json: data/cocotalk.json
-input_att_dir: data/cocobu_att
-input_label_h5: data/cocotalk_label.h5
 learning_rate: 0.0005
 learning_rate_decay_start: 0
 scheduled_sampling_start: 0
 # checkpoint_path: $ckpt_path
 # $start_from
 language_eval: 1
-save_checkpoint_every: 3000
-val_images_use: 5000
+save_checkpoint_every: 1000
+val_images_use: 10000
+rnn_size: 1024
+input_encoding_size: 1024
+att_feat_size: 2048
+att_hid_size: 1024
 
 train_sample_n: 5
-self_critical_after: 30
+self_critical_after: -1
 batch_size: 10
-learning_rate_decay_start: 0
 max_epochs: 30
+
+checkpoint_path: /home/xuewyang/Xuewen/Research/model/fashion/captioning/att2in2
+data_folder: /home/xuewyang/Xuewen/Research/data/FACAD/images/

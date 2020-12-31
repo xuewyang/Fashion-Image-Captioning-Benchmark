@@ -11,4 +11,6 @@
 #--learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path $OUTPUT_FOLDER --save_checkpoint_every 2000 \
 #--val_images_use 5000 --max_epochs 30 --data_folder $DATA_FOLDER --max_length 30 --language_eval 1
 
-CUDA_VISIBLE_DEVICES='1' python tools/train.py --cfg configs/updown/updown.yml --id updown
+#CUDA_VISIBLE_DEVICES='1' python tools/train.py --cfg configs/updown/updown.yml --id updown
+
+CUDA_VISIBLE_DEVICES='1' python tools/train.py --cfg configs/fc.yml --id newfc
