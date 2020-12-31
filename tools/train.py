@@ -17,8 +17,7 @@ from collections import defaultdict
 
 import captioning.utils.opts as opts
 import captioning.models as models
-# from captioning.data.dataloader import *
-from captioning.data.dataloader_fc import *
+from captioning.data.dataloader import *
 import skimage.io
 import captioning.utils.eval_utils as eval_utils
 import captioning.utils.misc as utils
