@@ -16,14 +16,8 @@ import os
 import pdb
 import sys
 from . import misc as utils
-
-# load coco-caption if available
-try:
-    sys.path.append("coco-caption")
-    from pycocotools.coco import COCO
-    from pycocoevalcap.eval import COCOEvalCap
-except:
-    print('Warning: coco-caption not available')
+sys.path.append("coco-caption")
+from pycocoevalcap.eval_fic import FICScorer
 
 bad_endings = ['a', 'an', 'the', 'in', 'for', 'at', 'of', 'with', 'before', 'after', 'on', 'upon', 'near', 'to', 'is',
                'are', 'am']
@@ -38,94 +32,32 @@ def count_bad(sen):
         return 0
 
 
-def getCOCO(dataset):
-    if 'coco' in dataset:
-        annFile = '/home/xuewyang/Xuewen/Research/data/COCO/annotations/captions_val2014.json'
-    elif 'flickr30k' in dataset or 'f30k' in dataset:
-        annFile = 'data/f30k_captions4eval.json'
-    return COCO(annFile)
-
-
 def language_eval(dataset, preds, preds_n, eval_kwargs, split):
+    references = []  # references (true captions) for calculating BLEU-4 score
+    hypotheses = []  # hypotheses (predictions)
     model_id = eval_kwargs['id']
-    eval_oracle = eval_kwargs.get('eval_oracle', 0)
-    
-    # create output dictionary
-    out = {}
 
-    if len(preds_n) > 0:
-        # vocab size and novel sentences
-        if 'coco' in dataset:
-            dataset_file = 'data/dataset_coco.json'
-        elif 'flickr30k' in dataset or 'f30k' in dataset:
-            dataset_file = 'data/dataset_flickr30k.json'
-        training_sentences = set([' '.join(__['tokens']) for _ in json.load(open(dataset_file))['images'] if not _['split'] in ['val', 'test'] for __ in _['sentences']])
-        generated_sentences = set([_['caption'] for _ in preds_n])
-        novels = generated_sentences - training_sentences
-        out['novel_sentences'] = float(len(novels)) / len(preds_n)
-        tmp = [_.split() for _ in generated_sentences]
-        words = []
-        for _ in tmp:
-            words += _
-        out['vocab_size'] = len(set(words))
+    for j in range(len(preds)):
+        references.append({'caption': preds[j]['gt']})
+        hypotheses.append({'caption': preds[j]['caption']})
 
-    # encoder.FLOAT_REPR = lambda o: format(o, '.3f')
+    assert len(references) == len(hypotheses)
+    scorer = FICScorer()
+    ids = [str(k) for k in range(len(hypotheses))]
+    hypo = {}
+    refe = {}
+    for k in range(len(hypotheses)):
+        hypo[str(k)] = [hypotheses[k]]
+        refe[str(k)] = [references[k]]
+    final_scores = scorer.score(refe, hypo, ids)
 
-    cache_path = os.path.join('eval_results/', '.cache_' + model_id + '_' + split + '.json')
+    cache_path = os.path.join('eval_results/', 'cache_' + model_id + '_' + split + '.json')
+    json.dump(preds, open(cache_path, 'w'), indent = 4, ensure_ascii = False)
+    # serialize to temporary json file. Sigh, COCO API..
 
-    coco = getCOCO(dataset)
-    valids = coco.getImgIds()
-
-    # filter results to only those in MSCOCO validation set
-    preds_filt = [p for p in preds if p['image_id'] in valids]
-    mean_perplexity = sum([_['perplexity'] for _ in preds_filt]) / len(preds_filt)
-    mean_entropy = sum([_['entropy'] for _ in preds_filt]) / len(preds_filt)
-    print('using %d/%d predictions' % (len(preds_filt), len(preds)))
-    json.dump(preds_filt, open(cache_path, 'w')) # serialize to temporary json file. Sigh, COCO API...
-
-    cocoRes = coco.loadRes(cache_path)
-    cocoEval = COCOEvalCap(coco, cocoRes)
-    cocoEval.params['image_id'] = cocoRes.getImgIds()
-    cocoEval.evaluate()
-
-    for metric, score in cocoEval.eval.items():
-        out[metric] = score
-    # Add mean perplexity
-    out['perplexity'] = mean_perplexity
-    out['entropy'] = mean_entropy
-
-    imgToEval = cocoEval.imgToEval
-    for k in list(imgToEval.values())[0]['SPICE'].keys():
-        if k != 'All':
-            out['SPICE_'+k] = np.array([v['SPICE'][k]['f'] for v in imgToEval.values()])
-            out['SPICE_'+k] = (out['SPICE_'+k][out['SPICE_'+k]==out['SPICE_'+k]]).mean()
-    for p in preds_filt:
-        image_id, caption = p['image_id'], p['caption']
-        imgToEval[image_id]['caption'] = caption
-
-    if len(preds_n) > 0:
-        from . import eval_multi
-        cache_path_n = os.path.join('eval_results/', '.cache_'+ model_id + '_' + split + '_n.json')
-        allspice = eval_multi.eval_allspice(dataset, preds_n, model_id, split)
-        out.update(allspice['overall'])
-        div_stats = eval_multi.eval_div_stats(dataset, preds_n, model_id, split)
-        out.update(div_stats['overall'])
-        if eval_oracle:
-            oracle = eval_multi.eval_oracle(dataset, preds_n, model_id, split)
-            out.update(oracle['overall'])
-        else:
-            oracle = None
-        self_cider = eval_multi.eval_self_cider(dataset, preds_n, model_id, split)
-        out.update(self_cider['overall'])
-        with open(cache_path_n, 'w') as outfile:
-            json.dump({'allspice': allspice, 'div_stats': div_stats, 'oracle': oracle, 'self_cider': self_cider}, outfile)
-        
-    out['bad_count_rate'] = sum([count_bad(_['caption']) for _ in preds_filt]) / float(len(preds_filt))
-    outfile_path = os.path.join('eval_results/', model_id + '_' + split + '.json')
-    with open(outfile_path, 'w') as outfile:
-        json.dump({'overall': out, 'imgToEval': imgToEval}, outfile)
-
-    return out
+    cache_path = os.path.join('eval_results/', 'cache_result_' + model_id + '_' + split + '.json')
+    json.dump(final_scores, open(cache_path, 'w'))  # serialize to temporary json file. Sigh, COCO API..
+    return final_scores
 
 
 def eval_split(model, crit, loader, eval_kwargs={}):
@@ -136,7 +68,6 @@ def eval_split(model, crit, loader, eval_kwargs={}):
     split = eval_kwargs.get('split', 'val')
     lang_eval = eval_kwargs.get('language_eval', 0)
     dataset = eval_kwargs.get('dataset', 'coco')
-    beam_size = eval_kwargs.get('beam_size', 1)
     sample_n = eval_kwargs.get('sample_n', 1)
     remove_bad_endings = eval_kwargs.get('remove_bad_endings', 0)
     os.environ["REMOVE_BAD_ENDINGS"] = str(remove_bad_endings) # Use this nasty way to make other code clean since it's a global configuration
@@ -176,16 +107,14 @@ def eval_split(model, crit, loader, eval_kwargs={}):
                         (seq > 0).to(seq_logprobs).sum(1) + 1)
             perplexity = - seq_logprobs.gather(2, seq.unsqueeze(2)).squeeze(2).sum(1) / (
                         (seq > 0).to(seq_logprobs).sum(1) + 1)
-        
-        # Print beam search
-        if beam_size > 1 and verbose_beam:
-            for i in range(img_feats.shape[0]):
-                print('\n'.join([utils.decode_sequence(model.vocab, _['seq'].unsqueeze(0))[0] for _ in model.done_beams[i]]))
-                print('--' * 10)
+
         sents = utils.decode_sequence(model.vocab, seq)
 
         for k, sent in enumerate(sents):
-            entry = {'image_id': data['infos'][k]['id'], 'caption': sent, 'perplexity': perplexity[k].item(), 'entropy': entropy[k].item()}
+            gt_tokens = data['labels'][k][0]
+            gt_sent = [model.vocab[w.item()] for w in gt_tokens if w > 0]
+            gt_sent = ' '.join(gt_sent)
+            entry = {'image_id': data['infos'][k]['id'], 'caption': sent, 'gt': gt_sent, 'perplexity': perplexity[k].item(), 'entropy': entropy[k].item()}
             if eval_kwargs.get('dump_path', 0) == 1:
                 entry['file_name'] = data['infos'][k]['file_path']
             predictions.append(entry)
@@ -217,7 +146,7 @@ def eval_split(model, crit, loader, eval_kwargs={}):
     if not os.path.isdir('eval_results'):
         os.mkdir('eval_results')
     torch.save((predictions, n_predictions),
-               os.path.join('eval_results/', '.saved_pred_' + eval_kwargs['id'] + '_' + split + '.pth'))
+               os.path.join('eval_results/', 'saved_pred_' + eval_kwargs['id'] + '_' + split + '.pth'))
     if lang_eval == 1:
         lang_stats = language_eval(dataset, predictions, n_predictions, eval_kwargs, split)
 

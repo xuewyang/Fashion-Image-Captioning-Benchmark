@@ -62,11 +62,8 @@ if opt.only_lang_eval == 1 or (not opt.force and os.path.isfile(pred_fn)):
                 os._exit(0)
         except:
             pass
-
     predictions, n_predictions = torch.load(pred_fn)
-    pdb.set_trace()
     lang_stats = eval_utils.language_eval(opt.input_json, predictions, n_predictions, vars(opt), opt.split)
-    pdb.set_trace()
     print(lang_stats)
     os._exit(0)
 
@@ -95,7 +92,6 @@ crit = losses.LanguageModelCriterion()
 
 # Create the Data Loader instance
 opt.batch_size = 10
-pdb.set_trace()
 loader = DataLoader(opt)
 # When eval using provided pretrained model, the vocab may be different from what you have in your cocotalk.json
 # So make sure to use the vocab in infos file.
@@ -107,9 +103,3 @@ opt.dataset = opt.input_json
 loss, split_predictions, lang_stats = eval_utils.eval_split(model, crit, loader, vars(opt))
 
 print('loss: ', loss)
-if lang_stats:
-    print(lang_stats)
-
-if opt.dump_json == 1:
-    # dump the json
-    json.dump(split_predictions, open('vis/vis.json', 'w'))
