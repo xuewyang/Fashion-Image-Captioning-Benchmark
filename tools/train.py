@@ -275,8 +275,6 @@ def train(opt):
 
                 if best_flag:
                     utils.save_checkpoint(opt, model, infos, optimizer, append='best')
-                epoch += 1
-                epoch_done = True
 
     except (RuntimeError, KeyboardInterrupt):
         print('Save ckpt on exception ...')
