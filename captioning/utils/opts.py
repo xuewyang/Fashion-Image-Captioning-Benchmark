@@ -212,8 +212,6 @@ def parse_opt():
                         help='# of attention heads')
     parser.add_argument('--dropout', type=float, default=0.1,
                         help='dropout of transformer')
-    parser.add_argument('--weight_decay', type=float, default=0,
-                        help='weight_decay')
 
     # For diversity evaluation during training
     add_diversity_opts(parser)
