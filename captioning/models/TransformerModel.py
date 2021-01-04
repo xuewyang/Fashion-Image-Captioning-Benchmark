@@ -19,7 +19,7 @@ from . import utils
 import copy
 import math
 import numpy as np
-
+import pdb
 from .CaptionModel import CaptionModel
 from .AttModel import sort_pack_padded_sequence, pad_unsort_packed_sequence, pack_wrapper, AttModel
 
@@ -303,7 +303,6 @@ class TransformerModel(AttModel):
         return []
 
     def _prepare_feature(self, fc_feats, att_feats, att_masks):
-
         att_feats, seq, att_masks, seq_mask = self._prepare_feature_forward(att_feats, att_masks)
         memory = self.model.encode(att_feats, att_masks)
 
