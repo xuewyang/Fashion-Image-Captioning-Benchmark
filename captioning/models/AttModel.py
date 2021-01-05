@@ -79,6 +79,7 @@ class AttModel(CaptionModel):
             checkpoint = torch.load(opt.pretrained_fashion_resnet)
             resnet.load_state_dict(checkpoint['model'])
             modules = list(resnet.resnet.children())[:-2]
+            print('Using fashion resnet pretrained on facad!!')
         else:
             # load resnet
             resnet = torchvision.models.resnet101(pretrained=True)
