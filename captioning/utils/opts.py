@@ -60,10 +60,16 @@ def parse_opt():
                         help='2048 for resnet, 512 for vgg')
     parser.add_argument('--logit_layers', type=int, default=1,
                         help='number of layers in the RNN')
+    parser.add_argument('--num_att', type=int,
+                        help='number of attributes.', default=990)
+    parser.add_argument('--num_cate', type=int,
+                        help='number of categories.', default=78)
 
     parser.add_argument('--use_bn', type=int, default=0,
                         help='If 1, then do batch_normalization first in att_embed, if 2 then do bn both in the '
                              'beginning and the end of att_embed')
+    parser.add_argument('--pretrained_fashion_resnet', type=str, default='',
+                        help='The resnet path pretrained from facad.')
 
     # feature manipulation
     parser.add_argument('--norm_att_feat', type=int, default=0,

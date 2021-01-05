@@ -4,10 +4,8 @@ from __future__ import print_function
 
 import os
 import copy
-
 import numpy as np
 import torch
-
 from .ShowTellModel import ShowTellModel
 from .FCModel import FCModel
 from .AttModel import *
@@ -16,6 +14,7 @@ from .cachedTransformer import TransformerModel as cachedTransformer
 from .BertCapModel import BertCapModel
 from .M2Transformer import M2TransformerModel
 from .AoAModel import AoAModel
+
 
 def setup(opt):
     if opt.caption_model in ['fc', 'show_tell']:
@@ -48,12 +47,6 @@ def setup(opt):
     # Top-down attention model
     elif opt.caption_model in ['topdown', 'updown']:
         model = UpDownModel(opt)
-    # StackAtt
-    elif opt.caption_model == 'stackatt':
-        model = StackAttModel(opt)
-    # DenseAtt
-    elif opt.caption_model == 'denseatt':
-        model = DenseAttModel(opt)
     # Transformer
     elif opt.caption_model == 'transformer':
         if getattr(opt, 'cached_transformer', False):

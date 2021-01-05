@@ -26,7 +26,7 @@ from . import utils
 import pdb
 from torch.nn.utils.rnn import PackedSequence, pack_padded_sequence, pad_packed_sequence
 from .FCModel import LSTMCore
-
+from .resnet import ResNet
 from .CaptionModel import CaptionModel
 
 bad_endings = ['a', 'an', 'the', 'in', 'for', 'at', 'of', 'with', 'before', 'after', 'on', 'upon', 'near', 'to',
@@ -74,10 +74,16 @@ class AttModel(CaptionModel):
         self.use_bn = getattr(opt, 'use_bn', 0)
         self.ss_prob = 0.0  # Schedule sampling probability
 
-        # load resnet
-        resnet = torchvision.models.resnet101(pretrained=True)
-        # Remove linear and pool layers (since we're not doing classification)
-        modules = list(resnet.children())[:-2]
+        if opt.pretrained_fashion_resnet != '':
+            resnet = ResNet(opt.num_cate)
+            checkpoint = torch.load(opt.pretrained_fashion_resnet)
+            resnet.load_state_dict(checkpoint['model'])
+            modules = list(resnet.resnet.children())[:-2]
+        else:
+            # load resnet
+            resnet = torchvision.models.resnet101(pretrained=True)
+            # Remove linear and pool layers (since we're not doing classification)
+            modules = list(resnet.children())[:-2]
         self.resnet = nn.Sequential(*modules)
         # Resize image to fixed size to allow input images of variable size
         self.adaptive_pool = nn.AdaptiveAvgPool2d((7, 7))
