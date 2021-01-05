@@ -23,10 +23,11 @@ class ShowTellModel(CaptionModel):
         self.seq_length = opt.seq_length
         self.fc_feat_size = opt.fc_feat_size
 
-        self.ss_prob = 0.0 # Schedule sampling probability
+        self.ss_prob = 0.0  # Schedule sampling probability
 
         self.img_embed = nn.Linear(self.fc_feat_size, self.input_encoding_size)
-        self.core = getattr(nn, self.rnn_type.upper())(self.input_encoding_size, self.rnn_size, self.num_layers, bias=False, dropout=self.drop_prob_lm)
+        self.core = getattr(nn, self.rnn_type.upper())(self.input_encoding_size, self.rnn_size, self.num_layers,
+                                                       bias=False, dropout=self.drop_prob_lm)
         self.embed = nn.Embedding(self.vocab_size + 1, self.input_encoding_size)
         self.logit = nn.Linear(self.rnn_size, self.vocab_size + 1)
         self.dropout = nn.Dropout(self.drop_prob_lm)
@@ -60,7 +61,7 @@ class ShowTellModel(CaptionModel):
             if i == 0:
                 xt = self.img_embed(fc_feats)
             else:
-                if self.training and i >= 2 and self.ss_prob > 0.0: # otherwiste no need to sample
+                if self.training and i >= 2 and self.ss_prob > 0.0:     # otherwiste no need to sample
                     sample_prob = fc_feats.data.new(batch_size*seq_per_img).uniform_(0, 1)
                     sample_mask = sample_prob < self.ss_prob
                     if sample_mask.sum() == 0:
@@ -68,8 +69,6 @@ class ShowTellModel(CaptionModel):
                     else:
                         sample_ind = sample_mask.nonzero().view(-1)
                         it = seq[:, i-1].data.clone()
-                        #prob_prev = torch.exp(outputs[-1].data.index_select(0, sample_ind)) # fetch prev distribution: shape Nx(M+1)
-                        #it.index_copy_(0, sample_ind, torch.multinomial(prob_prev, 1).view(-1))
                         prob_prev = torch.exp(outputs[-1].data) # fetch prev distribution: shape Nx(M+1)
                         it.index_copy_(0, sample_ind, torch.multinomial(prob_prev, 1).view(-1).index_select(0, sample_ind))
                 else:
@@ -98,7 +97,8 @@ class ShowTellModel(CaptionModel):
         beam_size = opt.get('beam_size', 10)
         batch_size = fc_feats.size(0)
 
-        assert beam_size <= self.vocab_size + 1, 'lets assume this for now, otherwise this corner case causes a few headaches down the road. can be dealt with in future if needed'
+        assert beam_size <= self.vocab_size + 1, 'lets assume this for now, otherwise this corner case causes a few ' \
+                                                 'headaches down the road. can be dealt with in future if needed'
         seq = torch.LongTensor(self.seq_length, batch_size).zero_()
         seqLogprobs = torch.FloatTensor(self.seq_length, batch_size)
         # lets process every image independently for now, for simplicity
@@ -137,7 +137,7 @@ class ShowTellModel(CaptionModel):
             if t == 0:
                 xt = self.img_embed(fc_feats)
             else:
-                if t == 1: # input <bos>
+                if t == 1:  # input <bos>
                     it = fc_feats.data.new(batch_size).long().zero_()
                 xt = self.embed(it)
 
@@ -145,20 +145,20 @@ class ShowTellModel(CaptionModel):
             logprobs = F.log_softmax(self.logit(self.dropout(output.squeeze(0))), dim=1)
 
             # sample the next word
-            if t == self.seq_length + 1: # skip if we achieve maximum length
+            if t == self.seq_length + 1:    # skip if we achieve maximum length
                 break
             if sample_method == 'greedy':
                 sampleLogprobs, it = torch.max(logprobs.data, 1)
                 it = it.view(-1).long()
             else:
                 if temperature == 1.0:
-                    prob_prev = torch.exp(logprobs.data).cpu() # fetch prev distribution: shape Nx(M+1)
+                    prob_prev = torch.exp(logprobs.data).cpu()  # fetch prev distribution: shape Nx(M+1)
                 else:
                     # scale logprobs by temperature
                     prob_prev = torch.exp(torch.div(logprobs.data, temperature)).cpu()
                 it = torch.multinomial(prob_prev, 1).to(logprobs.device)
-                sampleLogprobs = logprobs.gather(1, it) # gather the logprobs at sampled positions
-                it = it.view(-1).long() # and flatten indices for downstream processing
+                sampleLogprobs = logprobs.gather(1, it)     # gather the logprobs at sampled positions
+                it = it.view(-1).long()     # and flatten indices for downstream processing
 
             if t >= 1:
                 # stop when all finished
@@ -167,8 +167,8 @@ class ShowTellModel(CaptionModel):
                 else:
                     unfinished = unfinished & (it > 0)
                 it = it * unfinished.type_as(it)
-                seq[:,t-1] = it #seq[t] the input of t+2 time step
-                seqLogprobs[:,t-1] = sampleLogprobs.view(-1)
+                seq[:, t-1] = it     #seq[t] the input of t+2 time step
+                seqLogprobs[:, t-1] = sampleLogprobs.view(-1)
                 if unfinished.sum() == 0:
                     break
 

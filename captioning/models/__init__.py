@@ -18,7 +18,7 @@ from .AoAModel import AoAModel
 
 def setup(opt):
     if opt.caption_model in ['fc', 'show_tell']:
-        print('Warning: %s model is mostly deprecated; many new features are not supported.' %opt.caption_model)
+        print('Warning: %s model is mostly deprecated; many new features are not supported.' % opt.caption_model)
         if opt.caption_model == 'fc':
             print('Use newfc instead of fc')
     if opt.caption_model == 'fc':
@@ -41,9 +41,6 @@ def setup(opt):
     # Adaptive Attention model from Knowing when to look
     elif opt.caption_model == 'adaatt':
         model = AdaAttModel(opt)
-    # Adaptive Attention with maxout lstm
-    elif opt.caption_model == 'adaattmo':
-        model = AdaAttMOModel(opt)
     # Top-down attention model
     elif opt.caption_model in ['topdown', 'updown']:
         model = UpDownModel(opt)
