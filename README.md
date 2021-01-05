@@ -12,6 +12,9 @@ python -m pip install -e .
 |----------|-----|-----|-----|-----|-------|--------|------|------|-----|---|
 |NewFC     |19.9 |8.1  |3.8  |2.2  |7.5    |16.8    |21.1  |6.9   |0    |0  |
 
+# Node
+1. The max_length should be set at 30 instead of 20, as over 80% of the captions having number of words <= 30.
+
 
 # License:
 1. The dataset is under license in the LICENSE file.
