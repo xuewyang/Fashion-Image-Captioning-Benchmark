@@ -13,7 +13,7 @@ python -m pip install -e .
 |NewFC     |19.9 |8.1  |3.8  |2.2  |7.5    |16.8    |21.1  |6.9   |0    |0  |
 |ATT2IN2   |24.4 |11.4 |6.4  |4.3  |9.5    |19.9    |35.2  |9.8   |--   |-- |
 |BUTD      |24.7 |11.5 |6.5  |4.4  |9.7    |19.6    |36.9  |10.1  |--   |-- |
-|Trans     |--   |--   |--   |--   |--     |--      |--    |--    |--   |-- |
+|Trans     |24.4 |11.7 |6.2  |4.2  |10.2   |19.9    |36.7  |9.9   |--   |-- |
 
 # Node
 1. The max_length should be set at 30 instead of 20, as over 80% of the captions having number of words <= 30.
